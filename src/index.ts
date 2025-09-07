@@ -1,12 +1,25 @@
-import express, { Request, Response } from "express"
+import express, { Request, Response } from "express";
+import dotenv from "dotenv";
+import logger from "./utils/logger";
+import loggerMiddleware from "./middlewares/loggerMiddleware";
 
-const app = express()
-const port = 3000
+dotenv.config();
+
+const app = express();
+const port = process.env.PORT || 3000;
+
+app.use((req, res, next) => {
+    res.set("Cache-Control", "no-store");
+    next();
+});
+
+
+app.use(loggerMiddleware);
 
 app.get("/", (req: Request, res: Response) => {
-    res.json({ message: "Hello, World!" })
-})
+    res.json({ message: "Hello, World!" });
+});
 
 app.listen(port, () => {
-    console.log(`Server is running at http://localhost:${port}`)
-})
+    logger.info(`Server running at http://localhost:${port}`);
+});
