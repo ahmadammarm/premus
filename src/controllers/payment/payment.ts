@@ -47,7 +47,7 @@ const PaymentController = async (request: Request, response: Response) => {
     }
 };
 
-const PaymentCallbackController = async ( request: Request, response: Response ) => {
+const PaymentNotificationController = async ( request: Request, response: Response ) => {
     try {
         const { order_id, transaction_status, fraud_status } = request.body;
 
