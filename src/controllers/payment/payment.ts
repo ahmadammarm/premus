@@ -97,4 +97,4 @@ const PaymentNotificationController = async ( request: Request, response: Respon
     }
 };
 
-export { PaymentController, PaymentCallbackController };
+export { PaymentController, PaymentNotificationController };
