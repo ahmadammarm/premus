@@ -39,6 +39,7 @@ model User {
 
 model Transaction {
     id        String            @id @default(uuid())
+    orderId   String            @unique
     amount    Float
     status    TransactionStatus @default(PENDING)
     date      DateTime          @default(now())

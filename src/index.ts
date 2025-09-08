@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import logger from "./utils/logger";
 import loggerMiddleware from "./middlewares/loggerMiddleware";
 import authrouter from "./routers/auth/authroutes";
+import paymentrouter from "./routers/payment/paymentroutes";
 
 dotenv.config();
 
@@ -22,6 +23,7 @@ app.get("/", (req: Request, res: Response) => {
 });
 
 app.use('/api/auth', authrouter);
+app.use('/api/payment', paymentrouter);
 
 app.listen(port, () => {
     logger.info(`Server running at http://localhost:${port}`);
