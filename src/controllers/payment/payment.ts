@@ -69,7 +69,7 @@ const PaymentController = async (request: Request, response: Response) => {
 
 const PaymentNotificationController = async (request: Request, response: Response) => {
     try {
-        const { order_id, transaction_status, fraud_status } = request.body;
+        const { order_id, transaction_status, fraud_status, status_code, gross_amount } = request.body;
 
         if (!order_id || !transaction_status) {
             return response
@@ -83,7 +83,7 @@ const PaymentNotificationController = async (request: Request, response: Respons
         if (signatureKey) {
             const expectedSignature = crypto
                 .createHash("sha512")
-                .update(order_id + transaction_status + '200' + serverKey)
+                .update(order_id + gross_amount + status_code + serverKey)
                 .digest("hex");
 
             if (signatureKey !== expectedSignature) {
