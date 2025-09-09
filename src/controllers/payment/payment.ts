@@ -121,6 +121,10 @@ const PaymentNotificationController = async (request: Request, response: Respons
             newStatus = "FAILED";
         }
 
+        if (transaction.status === "COMPLETED") {
+            return response.status(200).json({ message: "Transaction already completed", order_id, transaction_status });
+        }
+
         await prisma.transaction.update({
             where: { orderId: order_id },
             data: {
