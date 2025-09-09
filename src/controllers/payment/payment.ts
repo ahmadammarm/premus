@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import logger from "../../utils/logger";
 import snap from "../../utils/midtrans";
 import prisma from "../../utils/prisma";
+import crypto from "crypto";
 
 const PaymentController = async (request: Request, response: Response) => {
     try {
@@ -12,6 +13,21 @@ const PaymentController = async (request: Request, response: Response) => {
                 .json({ message: "userId and amount are required" });
         }
 
+        const user = await prisma.user.findUnique({
+            where: {
+                id: userId
+            }
+        })
+
+        if (!user) {
+            return response.status(404).json({ message: "User not found" });
+        }
+
+        if (user.role === "PREMIUM") {
+            return response.status(400).json({ message: "User is already a premium member" });
+        }
+
+
         const orderId = "order-" + Math.round(new Date().getTime() / 1000);
 
         const parameter = {
@@ -20,7 +36,9 @@ const PaymentController = async (request: Request, response: Response) => {
                 gross_amount: amount,
             },
             customer_details: {
-                userId: userId,
+                user_id: user.id,
+                first_name: user.name,
+                email: user.email,
             },
         };
 
@@ -32,6 +50,7 @@ const PaymentController = async (request: Request, response: Response) => {
                 amount,
                 status: "PENDING",
                 orderId,
+                snapToken: transaction.token,
             },
         });
 
@@ -39,6 +58,7 @@ const PaymentController = async (request: Request, response: Response) => {
             message: "Transaction created",
             transactionId: newTransaction.id,
             orderId,
+            snapToken: transaction.token,
             redirectUrl: transaction.redirect_url,
         });
     } catch (error: any) {
@@ -47,7 +67,7 @@ const PaymentController = async (request: Request, response: Response) => {
     }
 };
 
-const PaymentNotificationController = async ( request: Request, response: Response ) => {
+const PaymentNotificationController = async (request: Request, response: Response) => {
     try {
         const { order_id, transaction_status, fraud_status } = request.body;
 
@@ -57,8 +77,24 @@ const PaymentNotificationController = async ( request: Request, response: Respon
                 .json({ message: "order_id and transaction_status are required" });
         }
 
+        const serverKey = process.env.MIDTRANS_SERVER_KEY || "";
+        const signatureKey = request.headers["x-signature"] as string;
+
+        if (signatureKey) {
+            const expectedSignature = crypto
+                .createHash("sha512")
+                .update(order_id + transaction_status + '200' + serverKey)
+                .digest("hex");
+
+            if (signatureKey !== expectedSignature) {
+                logger.warn(`Invalid signature: expected ${expectedSignature}, got ${signatureKey}`);
+                return response.status(400).json({ message: "Invalid signature" });
+            }
+        }
+
         const transaction = await prisma.transaction.findUnique({
             where: { orderId: order_id },
+            include: { User: true },
         });
 
         if (!transaction) {
@@ -71,11 +107,13 @@ const PaymentNotificationController = async ( request: Request, response: Respon
             if (fraud_status === "accept" || !fraud_status) {
                 newStatus = "COMPLETED";
 
-
-                await prisma.user.update({
-                    where: { id: transaction.userId },
-                    data: { role: "PREMIUM" },
-                });
+                if (transaction.User.role !== "PREMIUM") {
+                    await prisma.user.update({
+                        where: { id: transaction.userId },
+                        data: { role: "PREMIUM" },
+                    });
+                    logger.info(`User ${transaction.userId} upgraded to PREMIUM`);
+                };
             }
         } else if (transaction_status === "pending") {
             newStatus = "PENDING";
@@ -85,8 +123,13 @@ const PaymentNotificationController = async ( request: Request, response: Respon
 
         await prisma.transaction.update({
             where: { orderId: order_id },
-            data: { status: newStatus },
+            data: {
+                status: newStatus,
+                updatedAt: new Date(),
+            }
         });
+
+        logger.info(`Transaction ${order_id} updated to status ${newStatus}`);
 
         return response
             .status(200)
