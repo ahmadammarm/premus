@@ -1,17 +1,6 @@
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { NextFunction, Request, Response } from "express";
 
-declare global {
-    namespace Express {
-        interface Request {
-            user?: {
-                id: string;
-                name?: string;
-                email?: string;
-            };
-        }
-    }
-}
 
 const isAuthenticated = (request: Request, response: Response, next: NextFunction): void => {
     try {
@@ -43,10 +32,11 @@ const isAuthenticated = (request: Request, response: Response, next: NextFunctio
         const payload = jwt.verify(token, jwtSecret) as JwtPayload;
 
         if (payload) {
-            request.user = {
+            request.User = {
                 id: payload.id as string,
                 name: payload.name as string,
                 email: payload.email as string,
+                role: payload.role as string,
             };
             next();
         } else {

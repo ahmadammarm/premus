@@ -148,7 +148,7 @@ const GetPaymentStatusController = async (request: Request, response: Response) 
     try {
         const { orderId } = request.params;
 
-        const userId = request.user?.id;
+        const userId = request.User?.id;
 
         const transaction = await prisma.transaction.findUnique({
             where: {

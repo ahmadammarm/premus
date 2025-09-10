@@ -5,6 +5,7 @@ import loggerMiddleware from "./middlewares/loggerMiddleware";
 import authrouter from "./routers/auth/authroutes";
 import paymentrouter from "./routers/payment/paymentroutes";
 import cors from "cors";
+import premiumrouter from "./routers/premium/premiumroutes";
 
 dotenv.config();
 
@@ -28,6 +29,7 @@ app.get("/", (request: Request, response: Response) => {
 
 app.use('/api/auth', authrouter);
 app.use('/api/payment', paymentrouter);
+app.use('/api/premium', premiumrouter);
 
 app.use((request: Request, response: Response) => {
     response.status(404).json({ message: "Route not found" });
