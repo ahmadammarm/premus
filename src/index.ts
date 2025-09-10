@@ -1,4 +1,4 @@
-import express, { Request, Response } from "express";
+import express, { NextFunction, Request, Response } from "express";
 import dotenv from "dotenv";
 import logger from "./utils/logger";
 import loggerMiddleware from "./middlewares/loggerMiddleware";
@@ -10,16 +10,16 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 3000;
 
-app.use((req, res, next) => {
-    res.set("Cache-Control", "no-store");
+app.use((request: Request, response: Response, next: NextFunction) => {
+    response.set("Cache-Control", "no-store");
     next();
 });
 
 app.use(express.json());
 app.use(loggerMiddleware);
 
-app.get("/", (req: Request, res: Response) => {
-    res.json({ message: "Hello, World!" });
+app.get("/", (request: Request, response: Response) => {
+    response.json({ message: "Hello, World!" });
 });
 
 app.use('/api/auth', authrouter);

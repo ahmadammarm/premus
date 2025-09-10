@@ -144,4 +144,34 @@ const PaymentNotificationController = async (request: Request, response: Respons
     }
 };
 
-export { PaymentController, PaymentNotificationController };
+const GetPaymentStatusController = async (request: Request, response: Response) => {
+    try {
+        const { orderId } = request.params;
+
+        const userId = request.user?.id;
+
+        const transaction = await prisma.transaction.findUnique({
+            where: {
+                orderId,
+                userId
+            }
+        });
+
+        if (!transaction) {
+            return response.status(404).json({ message: "Transaction not found" });
+        }
+
+        return response.status(200).json({
+            orderId: transaction.orderId,
+            amount: transaction.amount,
+            status: transaction.status,
+            createdAt: transaction.createdAt,
+        });
+
+    } catch (error: any) {
+        logger.error('');
+        return response.status(500).json({ message: "Internal Server Error" })
+    }
+}
+
+export { PaymentController, PaymentNotificationController, GetPaymentStatusController };
