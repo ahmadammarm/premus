@@ -9,6 +9,14 @@ const SignupController = async (request: Request, response: Response) => {
     try {
         const { email, name, password } = request.body;
 
+        const isEmailExists = await prisma.user.findUnique({
+            where: { email }
+        });
+
+        if (isEmailExists) {
+            return response.status(400).json({ message: "Email already in use" });
+        }
+
         const hashedPassword = await hashpassword(password);
 
         if (!hashedPassword) {
